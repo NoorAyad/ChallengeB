@@ -1,30 +1,29 @@
 const express = require("express");
 const jwt = require("jsonwebtoken");
-
+require("dotenv").config();
 const app = express();
 app.use(express.json());
 
 const fs = require("fs");
 const data = fs.readFileSync("./users.json", "utf8");
 const users = JSON.parse(data);
-const secretKey = "heyAONI'WILLDOIT!!";
+ 
+  // Endpoint for generating and returning a JWT token
+  app.post("/login", (req, res) => {
+    // In a real-world scenario, you would typically validate the user's credentials here
+    const { username } = req.body;
+    const user = users.find((el) => el.username === username);
+    // Check if the username and password are correct
+    if (user) {
+      // Generate a JWT token
+      const token = jwt.sign({ username }, process.env.SECRET_KEY, { expiresIn: "4h" });
 
-// Endpoint for generating and returning a JWT token
-app.post("/login", (req, res) => {
-  // In a real-world scenario, you would typically validate the user's credentials here
-  const { username } = req.body;
-  const user = users.find((el) => el.username === username);
-  // Check if the username and password are correct
-  if (user) {
-    // Generate a JWT token
-    const token = jwt.sign({ username }, secretKey, { expiresIn: "4h" });
-
-    // Return the token to the client
-    res.json({ token });
-  } else {
-    res.status(401).json({ message: "Invalid username or email" });
-  }
-});
+      // Return the token to the client
+      res.json({ token });
+    } else {
+      res.status(401).json({ message: "Invalid username or email" });
+    }
+  });
 
 // Protected endpoint that requires a valid JWT token
 app.get("/protected", authenticateToken, (req, res) => {
@@ -44,7 +43,7 @@ function authenticateToken(req, res, next) {
   }
 
   // Verify and decode the token
-  jwt.verify(token, secretKey, (err, decoded) => {
+  jwt.verify(token,  process.env.SECRET_KEY, (err, decoded) => {
     if (err) {
       return res.status(403).json({ message: "Invalid token" });
     }
